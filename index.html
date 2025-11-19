@@ -510,7 +510,7 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Density (Густота)</div>
+                <div class="section-title">Density</div>
                 <input type="range" id="density" min="0" max="100" value="100" step="1">
                 <span class="range-value" id="densityValue">100%</span>
             </div>
@@ -518,9 +518,9 @@
             <div class="section">
                 <div class="section-title">Effect Type</div>
                 <div class="effect-grid">
-                    <button class="effect-btn active" data-effect="particles">Particles → Shape</button>
-                    <button class="effect-btn" data-effect="numbers">Numbers → Shape</button>
-                    <button class="effect-btn" data-effect="eyes">Eyes → Shape</button>
+                    <button class="effect-btn active" data-effect="particles">Particles</button>
+                    <button class="effect-btn" data-effect="numbers">Numbers</button>
+                    <button class="effect-btn" data-effect="eyes">Eyes</button>
                 </div>
             </div>
 
@@ -616,12 +616,14 @@
                 this.pupilTargetY = this.pupilY;
                 this.pupilChangeTime = 0;
                 
+                // For numbers: no rotation or offsets - use same approach as particles
                 this.numberOffsetX = 0;
                 this.numberOffsetY = 0;
                 this.numberTargetOffsetX = 0;
                 this.numberTargetOffsetY = 0;
                 this.numberChangeTime = 0;
-                this.targetRotation = this.rotation;
+                this.targetRotation = 0;
+                this.numberRotation = 0; // Always 0 for numbers during morphing
             }
             
             update(progress) {
@@ -679,8 +681,9 @@
                     ctx.lineWidth = Math.max(1, this.size * 0.08);
                     ctx.stroke();
                 } else if (currentEffect === 'numbers') {
-                    ctx.translate(this.x + this.numberOffsetX, this.y + this.numberOffsetY);
-                    ctx.rotate(this.rotation);
+                    // For numbers: use only x and y position (like particles) - no rotation, no offsets
+                    ctx.translate(this.x, this.y);
+                    // No rotation for numbers - keeps animation smooth
                     
                     ctx.fillStyle = this.color;
                     const fontSize = Math.max(6, this.size * 0.45 * this.fontScale);
@@ -1075,9 +1078,8 @@
                         drawFinalState();
                         if (currentEffect === 'eyes') {
                             startPupilsAnimation();
-                        } else if (currentEffect === 'numbers') {
-                            startNumbersAnimation();
                         }
+                        // Numbers animation removed - no post-animation effects
                     }, 500);
                 }
             }
@@ -1331,9 +1333,8 @@
                             // Start post-animation effects if needed
                             if (currentEffect === 'eyes') {
                                 startPupilsAnimation();
-                            } else if (currentEffect === 'numbers') {
-                                startNumbersAnimation();
                             }
+                            // Numbers animation removed - no post-animation effects
                         }, 1000);
                     }, 500);
                 }
