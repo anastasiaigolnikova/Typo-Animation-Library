@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphing Animator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=Roboto+Slab:wght@400;700;900&family=Bebas+Neue&family=Lora:wght@400;700&family=Bungee+Spice&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        }
+
+        .preview {
+            background: #000000;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .subtitle {
+            color: #999;
+            font-size: 11px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .section {
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        textarea,
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+            transition: border 0.3s;
+            margin-bottom: 8px;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .range-value {
+            display: inline-block;
+            margin-left: 8px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 11px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #000000;
+            color: white;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #1a1a1a;
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .effect-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+
+        .effect-btn {
+            padding: 8px 12px;
+            border: 1px solid #000000;
+            background: #ffffff;
+            color: #000000;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .effect-btn.active {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .states-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .state-box {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .state-header {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .arrow {
+            text-align: center;
+            margin: 4px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .arrow::before {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #000000;
+        }
+
+        /* Video Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-modal.active {
+            display: flex;
+        }
+
+        .video-modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            background: #000;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .video-modal video {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .video-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: background 0.3s;
+        }
+
+        .video-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Custom Font Selector */
+        .font-selector-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .font-selector-button {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .font-selector-button:hover {
+            border-color: #667eea;
+        }
+
+        .font-selector-button.active {
+            border-color: #667eea;
+        }
+
+        .font-preview {
+            font-size: 13px;
+            font-weight: 700;
+            flex: 1;
+            text-align: left;
+        }
+
+        .font-selector-arrow {
+            margin-left: 10px;
+            color: #667eea;
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .font-selector-button.active .font-selector-arrow {
+            transform: rotate(180deg);
+        }
+
+        .font-selector-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .font-selector-dropdown.active {
+            display: block;
+        }
+
+        .font-option {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .font-option:last-child {
+            border-bottom: none;
+        }
+
+        .font-option:hover {
+            background: #f8f9fa;
+        }
+
+        .font-option-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h1>Particle Morph</h1>
+            <div class="subtitle">
+                Create transformation animations between two shapes
+            </div>
+
+            <div class="section">
+                <div class="states-grid">
+                    <div class="state-box">
+                        <div class="state-header">FROM</div>
+                        <label class="form-label">Text</label>
+                        <textarea id="fromText" rows="1" placeholder="Enter text...">hey</textarea>
+                    </div>
+                    
+                    <div class="arrow"></div>
+                    
+                    <div class="state-box">
+                        <div class="state-header">TO</div>
+                        <label class="form-label">Text</label>
+                        <textarea id="toText" rows="1" placeholder="Enter text...">Bye</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Font</div>
+                <div class="font-selector-wrapper">
+                    <div class="font-selector-button" id="fontSelectorButton">
+                        <span class="font-preview" id="fontPreview" style="font-family: 'Impact', sans-serif;">Impact</span>
+                        <span class="font-selector-arrow">▼</span>
+                    </div>
+                    <div class="font-selector-dropdown" id="fontSelectorDropdown">
+                        <div class="font-option" data-font="Impact" data-family="Impact">
+                            <span class="font-option-name" style="font-family: 'Impact', sans-serif;">Impact</span>
+                        </div>
+                        <div class="font-option" data-font="Arial Black" data-family="Arial Black">
+                            <span class="font-option-name" style="font-family: 'Arial Black', sans-serif;">Arial Black</span>
+                        </div>
+                        <div class="font-option" data-font="Georgia" data-family="Georgia">
+                            <span class="font-option-name" style="font-family: 'Georgia', serif;">Georgia</span>
+                        </div>
+                        <div class="font-option" data-font="Verdana" data-family="Verdana">
+                            <span class="font-option-name" style="font-family: 'Verdana', sans-serif;">Verdana</span>
+                        </div>
+                        <div class="font-option" data-font="Courier New" data-family="Courier New">
+                            <span class="font-option-name" style="font-family: 'Courier New', monospace;">Courier New</span>
+                        </div>
+                        <div class="font-option" data-font="Times New Roman" data-family="Times New Roman">
+                            <span class="font-option-name" style="font-family: 'Times New Roman', serif;">Times New Roman</span>
+                        </div>
+                        <div class="font-option" data-font="Roboto" data-family="'Roboto', sans-serif">
+                            <span class="font-option-name" style="font-family: 'Roboto', sans-serif;">Roboto</span>
+                        </div>
+                        <div class="font-option" data-font="Roboto Slab" data-family="'Roboto Slab', serif">
+                            <span class="font-option-name" style="font-family: 'Roboto Slab', serif;">Roboto Slab</span>
+                        </div>
+                        <div class="font-option" data-font="Bebas Neue" data-family="'Bebas Neue', sans-serif">
+                            <span class="font-option-name" style="font-family: 'Bebas Neue', sans-serif;">Bebas Neue</span>
+                        </div>
+                        <div class="font-option" data-font="Lora" data-family="'Lora', serif">
+                            <span class="font-option-name" style="font-family: 'Lora', serif;">Lora</span>
+                        </div>
+                        <div class="font-option" data-font="Bungee Spice" data-family="'Bungee Spice', sans-serif">
+                            <span class="font-option-name" style="font-family: 'Bungee Spice', sans-serif;">Bungee Spice</span>
+                        </div>
+                        <div class="font-option" data-font="Oswald" data-family="'Oswald', sans-serif">
+                            <span class="font-option-name" style="font-family: 'Oswald', sans-serif;">Oswald</span>
+                        </div>
+                        <div class="font-option" data-font="Stack Sans Headline" data-family="'Stack Sans Headline', sans-serif">
+                            <span class="font-option-name" style="font-family: 'Stack Sans Headline', sans-serif;">Stack Sans Headline</span>
+                        </div>
+                        <div class="font-option" data-font="BBH Sans Hegarty" data-family="'BBH Sans Hegarty', sans-serif">
+                            <span class="font-option-name" style="font-family: 'BBH Sans Hegarty', sans-serif;">BBH Sans Hegarty</span>
+                        </div>
+                        <div class="font-option" data-font="Momo Signature" data-family="'Momo Signature', cursive">
+                            <span class="font-option-name" style="font-family: 'Momo Signature', cursive;">Momo Signature</span>
+                        </div>
+                    </div>
+                </div>
+                <select id="fontSelect" style="display: none;">
+                    <option value="Impact">Impact</option>
+                    <option value="Arial Black">Arial Black</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Roboto Slab">Roboto Slab</option>
+                    <option value="Bebas Neue">Bebas Neue</option>
+                    <option value="Lora">Lora</option>
+                    <option value="Bungee Spice">Bungee Spice</option>
+                    <option value="Oswald">Oswald</option>
+                    <option value="Stack Sans Headline">Stack Sans Headline</option>
+                    <option value="BBH Sans Hegarty">BBH Sans Hegarty</option>
+                    <option value="Momo Signature">Momo Signature</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Size</div>
+                <input type="range" id="fontSize" min="50" max="1500" value="400" step="1">
+                <span class="range-value" id="fontSizeValue">400px</span>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Letter Spacing</div>
+                <input type="range" id="letterSpacing" min="0" max="100" value="0" step="1">
+                <span class="range-value" id="letterSpacingValue">0px</span>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Density (Густота)</div>
+                <input type="range" id="density" min="0" max="100" value="100" step="1">
+                <span class="range-value" id="densityValue">100%</span>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Effect Type</div>
+                <div class="effect-grid">
+                    <button class="effect-btn active" data-effect="particles">Particles → Shape</button>
+                    <button class="effect-btn" data-effect="numbers">Numbers → Shape</button>
+                    <button class="effect-btn" data-effect="eyes">Eyes → Shape</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Speed</div>
+                <input type="range" id="speed" min="1" max="10" value="5" step="0.5">
+                <span class="range-value" id="speedValue">5</span>
+            </div>
+
+            <button onclick="startMorph()">
+                <svg class="btn-icon" viewBox="0 0 24 24">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start Animation
+            </button>
+            <button onclick="downloadCanvas()">
+                <svg class="btn-icon" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Frame
+            </button>
+            <button onclick="downloadVideo()">
+                <svg class="btn-icon" viewBox="0 0 24 24">
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                Download Video
+            </button>
+        </div>
+
+        <div class="preview">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <button class="video-modal-close" onclick="closeVideoModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <video id="videoPlayer" controls autoplay></video>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let particles = [];
+        let currentEffect = 'particles';
+        let isAnimating = false;
+        let animationFrame;
+        let pupilsAnimating = false;
+        let numbersAnimating = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        
+        class Particle {
+            constructor(startX, startY, endX, endY, char = '') {
+                this.startX = startX;
+                this.startY = startY;
+                this.endX = endX;
+                this.endY = endY;
+                this.x = startX;
+                this.y = startY;
+                this.char = char;
+                
+                const fontSize = parseInt(document.getElementById('fontSize').value);
+                const baseSize = Math.max(2, Math.min(8, fontSize / 40));
+                this.size = baseSize * (0.7 + Math.random() * 0.6);
+                
+                this.opacity = 1;
+                this.delay = Math.random() * 0.3;
+                
+                this.rotation = (Math.random() - 0.5) * 2.4;
+                this.fontScale = 0.6 + Math.random() * 0.8;
+                
+                this.color = '#ffffff';
+                this.strokeColor = '#000000';
+                
+                const pupilOffset = this.size * 0.3;
+                this.pupilX = (Math.random() - 0.5) * pupilOffset;
+                this.pupilY = (Math.random() - 0.5) * pupilOffset * 0.5;
+                
+                this.pupilTargetX = this.pupilX;
+                this.pupilTargetY = this.pupilY;
+                this.pupilChangeTime = 0;
+                
+                this.numberOffsetX = 0;
+                this.numberOffsetY = 0;
+                this.numberTargetOffsetX = 0;
+                this.numberTargetOffsetY = 0;
+                this.numberChangeTime = 0;
+                this.targetRotation = this.rotation;
+            }
+            
+            update(progress) {
+                const adjustedProgress = Math.max(0, Math.min(1, (progress - this.delay) / (1 - this.delay)));
+                
+                // Cubic easing: easeInOutCubic
+                const easedProgress = adjustedProgress < 0.5 
+                    ? 4 * adjustedProgress * adjustedProgress * adjustedProgress
+                    : 1 - Math.pow(-2 * adjustedProgress + 2, 3) / 2;
+                
+                this.x = this.startX + (this.endX - this.startX) * easedProgress;
+                this.y = this.startY + (this.endY - this.startY) * easedProgress;
+            }
+            
+            updatePupils(time) {
+                if (time - this.pupilChangeTime > 200 + Math.random() * 300) {
+                    const pupilOffset = this.size * 0.5;
+                    this.pupilTargetX = (Math.random() - 0.5) * pupilOffset;
+                    this.pupilTargetY = (Math.random() - 0.5) * pupilOffset * 0.5;
+                    this.pupilChangeTime = time;
+                }
+                
+                this.pupilX += (this.pupilTargetX - this.pupilX) * 0.3;
+                this.pupilY += (this.pupilTargetY - this.pupilY) * 0.3;
+            }
+            
+            updateNumbers(time) {
+                if (time - this.numberChangeTime > 150 + Math.random() * 250) {
+                    const moveRange = this.size * 3;
+                    this.numberTargetOffsetX = (Math.random() - 0.5) * moveRange;
+                    this.numberTargetOffsetY = (Math.random() - 0.5) * moveRange;
+                    
+                    this.targetRotation = (Math.random() - 0.5) * 2.4;
+                    
+                    this.numberChangeTime = time;
+                }
+                
+                this.numberOffsetX += (this.numberTargetOffsetX - this.numberOffsetX) * 0.15;
+                this.numberOffsetY += (this.numberTargetOffsetY - this.numberOffsetY) * 0.15;
+                this.rotation += (this.targetRotation - this.rotation) * 0.15;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                if (currentEffect === 'particles') {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = this.strokeColor;
+                    ctx.lineWidth = Math.max(1, this.size * 0.08);
+                    ctx.stroke();
+                } else if (currentEffect === 'numbers') {
+                    ctx.translate(this.x + this.numberOffsetX, this.y + this.numberOffsetY);
+                    ctx.rotate(this.rotation);
+                    
+                    ctx.fillStyle = this.color;
+                    const fontSize = Math.max(6, this.size * 0.45 * this.fontScale);
+                    ctx.font = `bold ${fontSize}px monospace`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.char, 0, 0);
+                    
+                    // Add black stroke for numbers
+                    ctx.strokeStyle = this.strokeColor;
+                    ctx.lineWidth = Math.max(0.5, fontSize * 0.1);
+                    ctx.strokeText(this.char, 0, 0);
+                } else if (currentEffect === 'eyes') {
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    
+                    const eyeWidth = this.size * 2.5;
+                    const eyeHeight = this.size * 1.5;
+                    
+                    // Almond-shaped eye with sharp edges using bezier curves
+                    ctx.beginPath();
+                    ctx.moveTo(-eyeWidth, 0);
+                    ctx.bezierCurveTo(
+                        -eyeWidth, -eyeHeight,
+                        eyeWidth, -eyeHeight,
+                        eyeWidth, 0
+                    );
+                    ctx.bezierCurveTo(
+                        eyeWidth, eyeHeight,
+                        -eyeWidth, eyeHeight,
+                        -eyeWidth, 0
+                    );
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.strokeStyle = this.strokeColor;
+                    ctx.lineWidth = Math.max(1, this.size * 0.15);
+                    ctx.stroke();
+                    
+                    // Pupil (0.7 of particle size)
+                    ctx.beginPath();
+                    ctx.arc(this.pupilX, this.pupilY, this.size * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = '#000000';
+                    ctx.fill();
+                    
+                    // White highlight on pupil
+                    ctx.beginPath();
+                    ctx.arc(this.pupilX - this.size * 0.2, this.pupilY - this.size * 0.2, this.size * 0.2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // Setup canvas
+        function resizeCanvas() {
+            const preview = document.querySelector('.preview');
+            const rect = preview.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            const visualWidth = Math.max(100, rect.width - 40);
+            const visualHeight = Math.max(100, rect.height - 40);
+            
+            canvas.style.width = visualWidth + 'px';
+            canvas.style.height = visualHeight + 'px';
+            
+            canvas.width = Math.max(100, Math.floor(visualWidth * dpr));
+            canvas.height = Math.max(100, Math.floor(visualHeight * dpr));
+            
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            
+            if (typeof generate === 'function' && canvas.width > 0 && canvas.height > 0) {
+                generate();
+            }
+        }
+        
+        // Get points from text
+        function getPointsFromText(text, offsetY = 0) {
+            const fontSelect = document.getElementById('fontSelect');
+            const selectedFontName = fontSelect.value;
+            // Get font family from selected option
+            const selectedOption = Array.from(document.querySelectorAll('.font-option')).find(opt => opt.dataset.font === selectedFontName);
+            const fontFamily = selectedOption ? selectedOption.dataset.family : selectedFontName;
+            const baseFontSize = parseInt(document.getElementById('fontSize').value, 10);
+            const letterSpacing = parseInt(document.getElementById('letterSpacing').value, 10);
+
+            const tempCanvas = document.createElement('canvas');
+            const dpr = window.devicePixelRatio || 1;
+            const canvasWidth = Math.floor(canvas.width / dpr);
+            const canvasHeight = Math.floor(canvas.height / dpr);
+            
+            if (canvasWidth <= 0 || canvasHeight <= 0) {
+                return [];
+            }
+            
+            tempCanvas.width = canvasWidth;
+            tempCanvas.height = canvasHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            const maxWidth = tempCanvas.width * 0.95;
+            const maxHeight = tempCanvas.height * 0.95;
+
+            const lines = text.split('\n').filter(line => line.trim().length > 0);
+            if (lines.length === 0) {
+                return [];
+            }
+            
+            const lineHeightRatio = 1.05;
+
+            const measureCtx = document.createElement('canvas').getContext('2d');
+
+            function getTextWidth(line, fs) {
+                // Determine font weight based on font family
+                let fontWeight = 'bold';
+                if (selectedFontName === 'Arial Black') {
+                    fontWeight = 'normal'; // Arial Black is already bold
+                } else if (fontFamily.includes('Bebas Neue') || fontFamily.includes('Bungee Spice')) {
+                    fontWeight = 'normal'; // These fonts don't have bold variant or are already bold
+                } else {
+                    fontWeight = 'bold';
+                }
+                measureCtx.font = `${fontWeight} ${fs}px ${fontFamily}`;
+                const chars = line.split('');
+                let width = 0;
+                chars.forEach(ch => {
+                    width += measureCtx.measureText(ch).width;
+                });
+                return width + Math.max(0, chars.length - 1) * letterSpacing;
+            }
+
+            let fontSize = baseFontSize;
+            let finalFontSize = fontSize;
+            
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const testLineHeight = fontSize * lineHeightRatio;
+                const totalHeight = lines.length * testLineHeight;
+                
+                let maxLineWidth = 0;
+                for (let line of lines) {
+                    const w = getTextWidth(line, fontSize);
+                    if (w > maxLineWidth) maxLineWidth = w;
+                }
+                
+                if (maxLineWidth <= maxWidth && totalHeight <= maxHeight) {
+                    finalFontSize = fontSize;
+                    break;
+                }
+                
+                fontSize = Math.floor(fontSize * 0.9);
+                if (fontSize < 10) {
+                    finalFontSize = 10;
+                    break;
+                }
+            }
+
+            fontSize = finalFontSize;
+            const lineHeight = fontSize * lineHeightRatio;
+
+            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.fillStyle = 'white';
+            
+            // Use appropriate font weight based on font family
+            let fontWeight = 'bold';
+            if (selectedFontName === 'Arial Black') {
+                fontWeight = 'normal'; // Arial Black is already bold
+            } else if (fontFamily.includes('Bebas Neue') || fontFamily.includes('Bungee Spice')) {
+                fontWeight = 'normal'; // These fonts don't have bold variant or are already bold
+            } else {
+                fontWeight = 'bold';
+            }
+            tempCtx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+            tempCtx.textBaseline = 'middle';
+
+            const totalBlockHeight = lines.length * lineHeight;
+            const startY = (tempCanvas.height - totalBlockHeight) / 2 + lineHeight / 2 + offsetY;
+
+            lines.forEach((line, lineIndex) => {
+                const chars = line.split('');
+                
+                let lineWidth = 0;
+                const charWidths = [];
+                chars.forEach(ch => {
+                    const w = tempCtx.measureText(ch).width;
+                    charWidths.push(w);
+                    lineWidth += w;
+                });
+                lineWidth += Math.max(0, chars.length - 1) * letterSpacing;
+                
+                let x = (tempCanvas.width - lineWidth) / 2;
+                const y = startY + lineIndex * lineHeight;
+                
+                chars.forEach((ch, i) => {
+                    tempCtx.fillText(ch, x, y);
+                    x += charWidths[i] + letterSpacing;
+                });
+            });
+
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            const points = [];
+
+            // Calculate step based on font size and effect type
+            let step;
+            if (currentEffect === 'eyes') {
+                if (fontSize < 100) step = 2.5;
+                else if (fontSize < 200) step = 3;
+                else if (fontSize < 400) step = Math.max(3.5, Math.floor(fontSize / 70));
+                else step = Math.max(4, Math.floor(fontSize / 60));
+            } else if (fontSize < 100) step = 1.5;
+            else if (fontSize < 200) step = 2;
+            else if (fontSize < 400) step = Math.max(2.5, Math.floor(fontSize / 80));
+            else step = Math.max(3, Math.floor(fontSize / 70));
+
+            // Get density value (0-100, where 100 = maximum density, 0 = minimum density)
+            const density = parseInt(document.getElementById('density').value, 10);
+            const densityMultiplier = density / 100; // 0 to 1
+            
+            // Use quadratic curve for more noticeable difference
+            // This makes the effect more pronounced at the extremes
+            const densityCurve = densityMultiplier * densityMultiplier;
+            
+            for (let y = 0; y < tempCanvas.height; y += step) {
+                for (let x = 0; x < tempCanvas.width; x += step) {
+                    const i = (y * tempCanvas.width + x) * 4;
+                    const alpha = data[i + 3];
+                    if (alpha > 128) {
+                        // Base skip rates for each effect type (maximum skip rate at 0% density)
+                        let maxSkipRate;
+                        if (currentEffect === 'eyes') maxSkipRate = 0.65; // Skip up to 65% at minimum
+                        else if (currentEffect === 'numbers') maxSkipRate = 0.70; // Skip up to 70% at minimum
+                        else maxSkipRate = 0.75; // Skip up to 75% at minimum for particles
+                        
+                        // Adjust skipRate based on density with quadratic curve:
+                        // density = 100 -> skipRate = 0 (max particles, no skipping)
+                        // density = 0 -> skipRate = maxSkipRate (min particles, skip most)
+                        // Using quadratic curve makes the difference more noticeable
+                        const skipRate = maxSkipRate * (1 - densityCurve);
+                        
+                        if (Math.random() > skipRate) {
+                            const jitterMultiplier = currentEffect === 'numbers' ? 1.2 : 0.4;
+                            const jitterX = (Math.random() - 0.5) * step * jitterMultiplier;
+                            const jitterY = (Math.random() - 0.5) * step * jitterMultiplier;
+                            const fx = x + jitterX;
+                            const fy = y + jitterY;
+                            if (fx >= 0 && fx < tempCanvas.width && fy >= 0 && fy < tempCanvas.height) {
+                                points.push({ x: fx, y: fy });
+                            }
+                        }
+                    }
+                }
+            }
+            return points;
+        }
+        
+        // Generate particles
+        function generate() {
+            stopPupilsAnimation();
+            stopNumbersAnimation();
+            
+            if (canvas.width <= 0 || canvas.height <= 0) {
+                return;
+            }
+            
+            const fromText = document.getElementById('fromText').value || 'A';
+            const toText = document.getElementById('toText').value || 'B';
+            
+            const fromPoints = getPointsFromText(fromText);
+            const toPoints = getPointsFromText(toText);
+            
+            if (fromPoints.length === 0 || toPoints.length === 0) {
+                particles = [];
+                drawStatic();
+                return;
+            }
+            
+            particles = [];
+            
+            const ratio = Math.max(fromPoints.length, toPoints.length) / Math.min(fromPoints.length, toPoints.length);
+            
+            let finalFromPoints = fromPoints;
+            let finalToPoints = toPoints;
+            
+            if (fromPoints.length > toPoints.length && ratio > 2) {
+                const targetCount = toPoints.length * 1.5;
+                finalFromPoints = [];
+                const skipFactor = Math.floor(fromPoints.length / targetCount);
+                for (let i = 0; i < fromPoints.length; i += skipFactor) {
+                    finalFromPoints.push(fromPoints[i]);
+                }
+            }
+            
+            if (toPoints.length > fromPoints.length && ratio > 2) {
+                const targetCount = fromPoints.length * 1.5;
+                finalToPoints = [];
+                const skipFactor = Math.floor(toPoints.length / targetCount);
+                for (let i = 0; i < toPoints.length; i += skipFactor) {
+                    finalToPoints.push(toPoints[i]);
+                }
+            }
+            
+            const maxPoints = Math.max(finalFromPoints.length, finalToPoints.length);
+            
+            if (finalFromPoints.length > finalToPoints.length) {
+                while (finalToPoints.length < finalFromPoints.length) {
+                    const randomPoint = finalToPoints[Math.floor(Math.random() * finalToPoints.length)];
+                    finalToPoints.push({
+                        x: randomPoint.x,
+                        y: randomPoint.y
+                    });
+                }
+            }
+            else if (finalToPoints.length > finalFromPoints.length) {
+                while (finalFromPoints.length < finalToPoints.length) {
+                    const randomPoint = finalFromPoints[Math.floor(Math.random() * finalFromPoints.length)];
+                    finalFromPoints.push({
+                        x: randomPoint.x,
+                        y: randomPoint.y
+                    });
+                }
+            }
+            
+            for (let i = 0; i < maxPoints; i++) {
+                const from = finalFromPoints[i];
+                const to = finalToPoints[i];
+                
+                const char = currentEffect === 'numbers' ? String(Math.floor(Math.random() * 10)) : '';
+                
+                particles.push(new Particle(
+                    from.x, from.y,
+                    to.x, to.y,
+                    char
+                ));
+            }
+            
+            drawStatic();
+        }
+        
+        // Draw static initial state
+        function drawStatic() {
+            const dpr = window.devicePixelRatio || 1;
+            const canvasWidth = Math.floor(canvas.width / dpr);
+            const canvasHeight = Math.floor(canvas.height / dpr);
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            particles.forEach(p => {
+                p.x = p.startX;
+                p.y = p.startY;
+                p.draw();
+            });
+        }
+        
+        // Morph animation
+        function startMorph() {
+            if (isAnimating) return;
+            
+            generate();
+            
+            isAnimating = true;
+            pupilsAnimating = false;
+            numbersAnimating = false;
+            const speed = parseFloat(document.getElementById('speed').value);
+            const duration = 4000 / (speed / 5);
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidth = Math.floor(canvas.width / dpr);
+                const canvasHeight = Math.floor(canvas.height / dpr);
+                
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                particles.forEach(p => {
+                    p.update(progress);
+                    p.draw();
+                });
+                
+                if (progress < 1) {
+                    animationFrame = requestAnimationFrame(animate);
+                } else {
+                    isAnimating = false;
+                    setTimeout(() => {
+                        drawFinalState();
+                        if (currentEffect === 'eyes') {
+                            startPupilsAnimation();
+                        } else if (currentEffect === 'numbers') {
+                            startNumbersAnimation();
+                        }
+                    }, 500);
+                }
+            }
+            
+            animate();
+        }
+        
+        // Pupils animation
+        function startPupilsAnimation() {
+            if (pupilsAnimating) return;
+            pupilsAnimating = true;
+            
+            function animatePupils() {
+                if (!pupilsAnimating) return;
+                
+                const time = Date.now();
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidth = Math.floor(canvas.width / dpr);
+                const canvasHeight = Math.floor(canvas.height / dpr);
+                
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                particles.forEach(p => {
+                    p.updatePupils(time);
+                    p.draw();
+                });
+                
+                animationFrame = requestAnimationFrame(animatePupils);
+            }
+            
+            animatePupils();
+        }
+        
+        // Stop pupils animation
+        function stopPupilsAnimation() {
+            pupilsAnimating = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+        
+        // Numbers animation
+        function startNumbersAnimation() {
+            if (numbersAnimating) return;
+            numbersAnimating = true;
+            
+            function animateNumbers() {
+                if (!numbersAnimating) return;
+                
+                const time = Date.now();
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidth = Math.floor(canvas.width / dpr);
+                const canvasHeight = Math.floor(canvas.height / dpr);
+                
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                particles.forEach(p => {
+                    p.updateNumbers(time);
+                    p.draw();
+                });
+                
+                animationFrame = requestAnimationFrame(animateNumbers);
+            }
+            
+            animateNumbers();
+        }
+        
+        // Stop numbers animation
+        function stopNumbersAnimation() {
+            numbersAnimating = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+        
+        // Draw final state
+        function drawFinalState() {
+            const dpr = window.devicePixelRatio || 1;
+            const canvasWidth = Math.floor(canvas.width / dpr);
+            const canvasHeight = Math.floor(canvas.height / dpr);
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            particles.forEach(p => {
+                p.x = p.endX;
+                p.y = p.endY;
+                p.draw();
+            });
+        }
+        
+        // Download canvas
+        function downloadCanvas() {
+            try {
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                link.download = `particle-morph-${timestamp}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error downloading image. Please try again.');
+            }
+        }
+        
+        // Download video
+        function downloadVideo() {
+            if (!canvas.captureStream) {
+                alert('Ваш браузер не поддерживает запись видео. Пожалуйста, используйте Chrome, Firefox или Edge.');
+                return;
+            }
+            
+            if (isRecording) {
+                alert('Запись уже идет. Пожалуйста, дождитесь завершения.');
+                return;
+            }
+            
+            try {
+                recordedChunks = [];
+                isRecording = true;
+                
+                // Get canvas stream
+                const stream = canvas.captureStream(60); // 60 FPS
+                
+                // Check available MIME types
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm;codecs=vp8';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = 'video/webm';
+                        if (!MediaRecorder.isTypeSupported(mimeType)) {
+                            mimeType = 'video/mp4';
+                        }
+                    }
+                }
+                
+                // Create MediaRecorder
+                const options = {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 5000000 // 5 Mbps
+                };
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                
+                mediaRecorder.ondataavailable = function(event) {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(recordedChunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Show video in modal instead of new window
+                    const videoModal = document.getElementById('videoModal');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    
+                    videoPlayer.src = url;
+                    videoModal.classList.add('active');
+                    
+                    // Clean up URL when modal is closed
+                    videoPlayer.addEventListener('loadedmetadata', function() {
+                        // Video is ready
+                    });
+                    
+                    // Clean up on modal close
+                    const cleanup = function() {
+                        videoPlayer.pause();
+                        videoPlayer.src = '';
+                        URL.revokeObjectURL(url);
+                    };
+                    
+                    // Store cleanup function for close button
+                    videoModal._cleanup = cleanup;
+                    
+                    isRecording = false;
+                    mediaRecorder = null;
+                    recordedChunks = [];
+                };
+                
+                mediaRecorder.onerror = function(event) {
+                    console.error('MediaRecorder error:', event);
+                    alert('Ошибка при записи видео. Пожалуйста, попробуйте снова.');
+                    isRecording = false;
+                    mediaRecorder = null;
+                    recordedChunks = [];
+                };
+                
+                // Start recording
+                mediaRecorder.start();
+                
+                // Start animation (it will stop recording automatically)
+                startMorphWithRecording();
+                
+            } catch (error) {
+                console.error('Video recording error:', error);
+                alert('Ошибка при запуске записи видео: ' + error.message);
+                isRecording = false;
+                mediaRecorder = null;
+                recordedChunks = [];
+            }
+        }
+        
+        // Start morph animation with video recording
+        function startMorphWithRecording() {
+            if (isAnimating) return;
+            
+            generate();
+            
+            isAnimating = true;
+            pupilsAnimating = false;
+            numbersAnimating = false;
+            const speed = parseFloat(document.getElementById('speed').value);
+            const duration = 4000 / (speed / 5);
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const dpr = window.devicePixelRatio || 1;
+                const canvasWidth = Math.floor(canvas.width / dpr);
+                const canvasHeight = Math.floor(canvas.height / dpr);
+                
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                particles.forEach(p => {
+                    p.update(progress);
+                    p.draw();
+                });
+                
+                if (progress < 1) {
+                    animationFrame = requestAnimationFrame(animate);
+                } else {
+                    isAnimating = false;
+                    
+                    // Wait a bit for final state, then stop recording
+                    setTimeout(() => {
+                        drawFinalState();
+                        
+                        // Show final state for 1 second, then stop recording
+                        setTimeout(() => {
+                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                                mediaRecorder.stop();
+                            }
+                            
+                            // Start post-animation effects if needed
+                            if (currentEffect === 'eyes') {
+                                startPupilsAnimation();
+                            } else if (currentEffect === 'numbers') {
+                                startNumbersAnimation();
+                            }
+                        }, 1000);
+                    }, 500);
+                }
+            }
+            
+            animate();
+        }
+        
+        // Custom Font Selector
+        const fontSelectorButton = document.getElementById('fontSelectorButton');
+        const fontSelectorDropdown = document.getElementById('fontSelectorDropdown');
+        const fontPreview = document.getElementById('fontPreview');
+        const fontSelect = document.getElementById('fontSelect');
+        const fontOptions = document.querySelectorAll('.font-option');
+
+        // Toggle dropdown
+        fontSelectorButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isActive = fontSelectorDropdown.classList.toggle('active');
+            fontSelectorButton.classList.toggle('active', isActive);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!fontSelectorButton.contains(e.target) && !fontSelectorDropdown.contains(e.target)) {
+                fontSelectorDropdown.classList.remove('active');
+                fontSelectorButton.classList.remove('active');
+            }
+        });
+
+        // Handle font selection
+        fontOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const fontName = this.dataset.font;
+                const fontFamily = this.dataset.family;
+                
+                // Update preview
+                fontPreview.textContent = fontName;
+                fontPreview.style.fontFamily = fontFamily;
+                
+                // Update hidden select
+                fontSelect.value = fontName;
+                
+                // Trigger change event
+                fontSelect.dispatchEvent(new Event('change'));
+                
+                // Close dropdown
+                fontSelectorDropdown.classList.remove('active');
+                fontSelectorButton.classList.remove('active');
+            });
+        });
+
+        // Sync with hidden select if changed programmatically
+        fontSelect.addEventListener('change', function() {
+            const selectedFont = this.value;
+            const selectedOption = Array.from(fontOptions).find(opt => opt.dataset.font === selectedFont);
+            if (selectedOption) {
+                fontPreview.textContent = selectedFont;
+                fontPreview.style.fontFamily = selectedOption.dataset.family;
+            }
+        });
+
+        // Event handlers
+        document.getElementById('fromText').addEventListener('input', generate);
+        document.getElementById('toText').addEventListener('input', generate);
+        document.getElementById('fontSelect').addEventListener('change', generate);
+        
+        document.getElementById('fontSize').addEventListener('input', function() {
+            document.getElementById('fontSizeValue').textContent = this.value + 'px';
+            generate();
+        });
+        
+        document.getElementById('letterSpacing').addEventListener('input', function() {
+            document.getElementById('letterSpacingValue').textContent = this.value + 'px';
+            generate();
+        });
+        
+        document.getElementById('density').addEventListener('input', function() {
+            document.getElementById('densityValue').textContent = this.value + '%';
+            generate();
+        });
+        
+        document.getElementById('speed').addEventListener('input', function() {
+            document.getElementById('speedValue').textContent = this.value;
+        });
+        
+        // Effect type selection
+        document.querySelectorAll('[data-effect]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-effect]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentEffect = this.dataset.effect;
+                generate();
+            });
+        });
+        
+        // Initialize canvas
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Initial generation after a short delay to ensure canvas is ready
+        setTimeout(() => {
+            if (canvas.width > 0 && canvas.height > 0) {
+                generate();
+            }
+        }, 100);
+        
+        // Close video modal
+        function closeVideoModal() {
+            const videoModal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            
+            videoModal.classList.remove('active');
+            
+            // Clean up video
+            if (videoModal._cleanup) {
+                videoModal._cleanup();
+                videoModal._cleanup = null;
+            } else {
+                videoPlayer.pause();
+                videoPlayer.src = '';
+            }
+        }
+        
+        // Close modal on background click
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVideoModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const videoModal = document.getElementById('videoModal');
+                if (videoModal.classList.contains('active')) {
+                    closeVideoModal();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
